@@ -1,9 +1,5 @@
 # simple LIHKG scraper with python
 
-![Version](https://img.shields.io/badge/version-0.12-orange)
-![license](https://img.shields.io/github/license/papatekken/simple-LIHKG-scraper-with-python)
-![Python](https://img.shields.io/badge/Python-3.7.0-blue)
-![selenium](https://img.shields.io/badge/selenium-3.14.1-blue)
 
 ## About
 
@@ -36,7 +32,3 @@ It was developed in Python, by using the library [Selenium]
 
 ## License
 [MIT](https://github.com/papatekken/simple-LIHKG-scraper-with-python/blob/master/LICENSE)
-
-## Contact
-Created by [@papatekken](papatekken@gmail.com) - feel free to contact me!
-
