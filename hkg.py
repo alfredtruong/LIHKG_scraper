@@ -1,56 +1,90 @@
-from selenium import webdriver
+#%%
 
+import sys
+import io
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+import random
 
-import sys
-import io
+#pip install chromedriver-autoinstaller
+import chromedriver_autoinstaller
+chromedriver_autoinstaller.install()
+
+
+def chrome_driver_options():
+	my_proxy = random.choice(proxies_list)
+	my_user_agent = random.choice(user_agents)
+	chrome_options = Options()
+	chrome_options.add_argument("--headless=new")
+	chrome_options.add_argument(f'--proxy-server={my_proxy}')
+	chrome_options.add_argument(f"--user-agent={my_user_agent}")
+	return chrome_options
+
+#%%
 
 __version__ = '0.12'
 
+################################# PARAMS
+from scrape_params import user_agents,proxies_list
+IS_DEV = True
 
-def captureData(ID):
-	browser = webdriver.Chrome() 
-	browser.maximize_window()
-	browser.get("http://lihkg.com/thread/"+ID) #navigate to the page	
+def captureData(thread_id: int):
+	browser = webdriver.Chrome(options=chrome_driver_options())
+	if IS_DEV:
+		browser.maximize_window()
 
-	problem = False
+	################### main page
+	# load
+	page = f"http://lihkg.com/thread/{thread_id}"
+	print(page)
+	browser.get(page)
 	timeout = 10
-	try: 
+	try:
 		element_present = EC.presence_of_element_located((By.CLASS_NAME, '_36ZEkSvpdj_igmog0nluzh'))
 		WebDriverWait(browser, timeout).until(element_present)
 	except TimeoutException:
 		print ("Timed out waiting for page to load" )
-		problem = True
-	
-	if(not problem): #make sure the page can load
-		with io.open(ID+"Exported.txt", "w", encoding="utf-8") as file:
-			content = browser.find_element_by_class_name('_1H7LRkyaZfWThykmNIYwpH')
-			opt = content.find_elements_by_tag_name('option') 
-			i=len(opt)
-			for counter in range(1, i):
-				browser.get("http://lihkg.com/thread/"+ID+"/page/"+str(counter)) #navigate to the page by page no
-				timeout = 10
-				try:
-					element_present = EC.presence_of_element_located((By.CLASS_NAME, '_36ZEkSvpdj_igmog0nluzh'))
-					WebDriverWait(browser, timeout).until(element_present)
-				except TimeoutException:
-					file.write("Timed out waiting for page "+counter+"to load" )
-					problem = True		
-				if(not problem): #make sure the page can load	
-					content = browser.find_elements_by_class_name('_36ZEkSvpdj_igmog0nluzh')
-					for x in content:
-						file.write("*************************************************")
-						file.write(x.text)
-		file.close()
-	if (browser!=None):
-		browser.quit()  
-  
+		return None
 
- 
-  
+	# identify total number of subpages for this thread
+	content = browser.find_element(By.CLASS_NAME,'_1H7LRkyaZfWThykmNIYwpH') # get page container
+	opt = content.find_elements(By.TAG_NAME,'option') # get page options (figure out how many pages of info)
+	print(f'opt = {opt}')
+	print(f'len(opt) = {len(opt)}')
+	
+	with io.open(f"{thread_id}Exported.txt", "w", encoding="utf-8") as file:
+		################### subpage
+		for counter in range(1, len(opt)):
+			# load
+			subpage = f"http://lihkg.com/thread/{thread_id}/page/{counter}"
+			print('\t',subpage)
+			browser.get(subpage)
+			timeout = 10
+			try:
+				element_present = EC.presence_of_element_located((By.CLASS_NAME, '_2cNsJna0_hV8tdMj3X6_gJ'))
+				WebDriverWait(browser, timeout).until(element_present)
+			except TimeoutException:
+				file.write(f"Timed out waiting for page {counter} to load")
+				return None
+
+		# make sure page loaded
+		content = browser.find_elements(By.CLASS_NAME,'_36ZEkSvpdj_igmog0nluzh')
+		for x in content:
+			file.write("*************************************************")
+			file.write(x.text)
+
+	# close output file
+	file.close()
+
+	# close chromedriver
+	if browser is not None:
+		browser.quit()
+#%%
+
 if(len(sys.argv)<2):
 	print("no post ID found")
 	sys.exit()
@@ -60,3 +94,8 @@ print("Version "+__version__)
 print(" ")
 captureData(sys.argv[1])
 print("Finished")
+
+# %%
+
+
+# captureData(1)
