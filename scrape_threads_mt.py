@@ -1,5 +1,8 @@
 #%%
 
+# how to install chromedriver on linux
+# https://skolo.online/documents/webscrapping/
+
 from typing import List, Dict
 import json
 import os
@@ -13,6 +16,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
 
 from fake_useragent import UserAgent
 
@@ -20,23 +24,7 @@ from fake_useragent import UserAgent
 import chromedriver_autoinstaller
 chromedriver_autoinstaller.install()
 
-parser = argparse.ArgumentParser(description='LIHKG scraper')
-parser.add_argument('--name', help='scrape prefix', default='lihkg')
-parser.add_argument('--start', help='first thread id', type=int, default=1)
-parser.add_argument('--stop', help='last thread id', type=int, default=10)
-parser.add_argument('--threads', help='number of threads', type=int, default=1)
-parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, default=True)
-parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
-parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
-parser.add_argument('--short_wait_min', help='short wait min seconds', type=int, default=5)
-parser.add_argument('--short_wait_max', help='short wait max seconds', type=int, default=10)
-parser.add_argument('--long_wait_min', help='long wait min seconds', type=int, default=30)
-parser.add_argument('--long_wait_max', help='long wait max seconds', type=int, default=60)
-
-args = parser.parse_args()
-
 lock = threading.Lock()
-
 
 ############### chromedriver
 '''
@@ -182,7 +170,11 @@ def capture_thread_subpage(
     thread_id: int,
     subpage_id: int,
 ) -> bool:
-    # thread_id,subpage_id=1,1
+    '''
+    thread_id,subpage_id=1,1
+    thread_id,subpage_id=2367593,1
+    thread_id,subpage_id=26,28
+    '''
     try:
         # generate url
         thread_subpage_url = thread_id_and_subpage_id_to_url(thread_id,subpage_id)
@@ -200,12 +192,63 @@ def capture_thread_subpage(
         thread_title_text = browser.find_element(By.CLASS_NAME,'CrheYfsiQFY-vLMnO378W').text
 
         # get comments
+        #comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'GAagiRXJU88Nul1M7Ai0H')
         #comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'_2cNsJna0_hV8tdMj3X6_gJ')
-        comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'GAagiRXJU88Nul1M7Ai0H')
-        comments_text = [x.text for x in comments]
+        #comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'GAagiRXJU88Nul1M7Ai0H')
+        #[x.text for x in comments]
 
+        #parent_elements = browser.find_elements(By.CSS_SELECTOR, "div._2cNsJna0_hV8tdMj3X6_gJ")
+
+        # Get the page source after it's fully loaded
+        page_source = browser.page_source
+
+        # Parse the page source with BeautifulSoup
+        soup = BeautifulSoup(page_source, "html.parser")
+
+        # Find all the parent elements
+        parent_elements = soup.find_all("div", class_="_2cNsJna0_hV8tdMj3X6_gJ", attrs={"data-ast-root": "true"})
+
+        # Extract the text from each parent element
+        for parent_element in parent_elements:
+            # Remove the blockquote elements from the parent element
+            for blockquote_element in parent_element.find_all("blockquote", class_="_31B9lsqlMMdzv-FSYUkXeV"):
+                blockquote_element.decompose()
+
+        # Get the text of the modified parent element
+        res = [parent_element.get_text(strip=True) for parent_element in parent_elements]
+
+        '''
+        # Find the parent element
+        parent_element = browser.find_element(By.CSS_SELECTOR, "div.GAagiRXJU88Nul1M7Ai0H")
+        # for i,x in enumerate(parent_elements): print(i,x.text)
+
+
+        # Get all the child elements of the parent element, excluding the blockquote elements
+        child_elements = [elem for elem in parent_element.find_elements(By.CSS_SELECTOR, "*") if elem.tag_name != "blockquote"]
+        [x.text for x in child_elements]
+
+        all_elements = browser.find_elements(By.CSS_SELECTOR, "div.GAagiRXJU88Nul1M7Ai0H")
+        #all_elements = browser.find_elements(By.CSS_SELECTOR, "div._2cNsJna0_hV8tdMj3X6_gJ > *")
+        [x.text for x in all_elements]
+        remaining_elements = [elem for elem in all_elements if elem.get_attribute("class") != "_31B9lsqlMMdzv-FSYUkXeV"]
+        #[x.text for x in remaining_elements]
+        comments_text = [x.text for x in remaining_elements]
+
+
+        # Loop through the parent elements and remove the blockquote sub-blocks
+        for parent_elem in all_elements:
+            blockquotes = parent_elem.find_elements(By.CSS_SELECTOR, "blockquote._31B9lsqlMMdzv-FSYUkXeV")
+            for blockquote in blockquotes:
+                browser.execute_script("arguments[0].remove();", blockquote)
+
+        # Now you can interact with the modified elements
+        for parent_elem in all_elements:
+            # Perform actions on the modified elements
+            print(parent_elem.text)
+
+        '''
         # write to file
-        write_comments_to_jsonl(thread_subpage_url,thread_topic_text,thread_title_text,comments_text)
+        write_comments_to_jsonl(thread_subpage_url,thread_topic_text,thread_title_text,res)
         return True # success
     except TimeoutException:
         return False # failure
@@ -305,17 +348,33 @@ def worker(q, proxy_list):
     if browser is not None:
         browser.quit()
 
-#%%
 ################################# RUN SETTINGS
 # ref
 from scrape_params import proxy_list
 
+#%%
+parser = argparse.ArgumentParser(description='LIHKG scraper')
+parser.add_argument('--name', help='scrape prefix', default='lihkg')
+parser.add_argument('--start', help='first thread id', type=int, default=1)
+parser.add_argument('--stop', help='last thread id', type=int, default=10)
+parser.add_argument('--threads', help='number of threads', type=int, default=1)
+parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, default=True)
+parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
+parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
+parser.add_argument('--short_wait_min', help='short wait min seconds', type=int, default=5)
+parser.add_argument('--short_wait_max', help='short wait max seconds', type=int, default=10)
+parser.add_argument('--long_wait_min', help='long wait min seconds', type=int, default=30)
+parser.add_argument('--long_wait_max', help='long wait max seconds', type=int, default=60)
+args = parser.parse_args()
+
+#%%
+
 # settings
 if True:
     VERBOSE = args.verbose
-    WORKERS = args.workers
+    WORKERS = args.threads
     THREAD_FROM = args.start
-    THREAD_TO = args.finish
+    THREAD_TO = args.stop
     WEBDRIVER_TIMEOUT = args.webdriver_timeout
     SKIP_VISITED_THREADS = args.ignore_handled
     SHORT_WAIT_MIN = args.short_wait_min
@@ -389,10 +448,10 @@ for t in threads:
 
 #%%
 
-# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ nohup python scrape_threads_mt.py -start 1 -stop 250000 -threads 50 > scrape_threads_mt_1_250000.out 2>&1 &
+# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ nohup python scrape_threads_mt.py --start 1 --stop 250000 --threads 5 --ignore_handled False > scrape_threads_mt_1_250000.out 2>&1 &
 # (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ less scrape_threads_mt_1_250000.out 
 
-
+'''
 parser.add_argument('--name', help='scrape prefix', default='lihkg')
 parser.add_argument('--start', help='first thread id', type=int, default=1)
 parser.add_argument('--stop', help='last thread id', type=int, default=10)
@@ -400,3 +459,4 @@ parser.add_argument('--threads', help='number of threads', type=int, default=1)
 parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, default=True)
 parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
 parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
+'''
