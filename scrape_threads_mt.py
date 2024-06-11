@@ -72,20 +72,20 @@ def get_browser(proxy_list):
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 def get_browser(proxy_list):
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--disable-popup-blocking")
-    options.add_argument("--log-level=1")
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--disable-popup-blocking")
+    chrome_options.add_argument("--log-level=1")
 
     # user agent
     ua = UserAgent()
-    options.add_argument(f"--user-agent={ua.random}")
+    chrome_options.add_argument(f"--user-agent={ua.random}")
 
     # proxy
     if USE_PROXY_IP:
-        options.add_argument(f'--proxy-server={random.choice(proxy_list)}')
+        chrome_options.add_argument(f'--proxy-server={random.choice(proxy_list)}')
 
-    browser = webdriver.Chrome(options=options)
+    browser = webdriver.Chrome(options=chrome_options)
     return browser
 
 ############### json utils
@@ -271,7 +271,7 @@ def capture_thread(
                 if capture_res:
                     newly_handled_subpage_ids.append(subpage_id)
         if VERBOSE: print() # new line
-        
+
         # batch updated newly handled subpages
         handled_threads = handled_subpage_ids + newly_handled_subpage_ids
         update_thread_handled_subpage_ids(thread_url,thread_id,handled_threads)

@@ -1,32 +1,55 @@
 #%%
 
+from typing import List, Dict
+import json
 import os
-import sys
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+import random
+import threading
+
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import random
 
-from typing import List, Dict
-import json
+from fake_useragent import UserAgent
+
 #pip install chromedriver-autoinstaller
 import chromedriver_autoinstaller
 chromedriver_autoinstaller.install()
 
-import threading
 lock = threading.Lock()
 
 ############### chromedriver
-# init
-def get_browser():
+# init selenium
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+def get_browser(proxy_list):
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
+    #chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-popup-blocking")
-    #chrome_options.add_argument(f'--proxy-server={random.choice(proxies_list)}')
-    #chrome_options.add_argument(f"--user-agent={random.choice(user_agents)}")
+    chrome_options.add_argument("--log-level=1")
+    # user agent
+    ua = UserAgent()
+    chrome_options.add_argument(f"--user-agent={ua.random}")
+    # proxy ip
+    proxy_ip = random.choice(proxy_list)
+    chrome_options.add_argument(f'--proxy-server={proxy_ip}')
+    # build and return
+    browser = webdriver.Chrome(options=chrome_options)
+    return browser
+
+def get_browser(proxy_df):
+    chrome_options = Options()
+    #chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--disable-popup-blocking")
+    chrome_options.add_argument("--log-level=1")
+    # user agent
+    ua = UserAgent()
+    chrome_options.add_argument(f"--user-agent={ua.random}")
+    # proxy ip
+    proxy_ip = proxy_df.sample(1).to_dict()
+    chrome_options.add_argument(f"--proxy-server={proxy_ip['ip']}:{proxy_ip['port']}")
+    # build and return
     browser = webdriver.Chrome(options=chrome_options)
     return browser
 
@@ -158,7 +181,7 @@ def capture_thread_subpage(
         
         # load webpage
         browser.get(thread_subpage_url)
-        if IS_TESTING: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
+        #if VERBOSE: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
         element_present = EC.presence_of_element_located((By.CLASS_NAME, '_2cNsJna0_hV8tdMj3X6_gJ'))
         WebDriverWait(browser, WEBDRIVER_TIMEOUT).until(element_present)
 
@@ -194,7 +217,7 @@ def capture_thread(
     skip_partial_thread_successes: bool = False, # should ignore threads with partial successes
 ) -> int:
     '''
-    thread_id=4
+    thread_id=3
     '''
     ################### ref data
     thread_url = thread_id_to_url(thread_id) # thread_url
@@ -204,7 +227,7 @@ def capture_thread(
     if skip_partial_thread_successes:
         # dont revisit thread if something previously saved
         if thread_url in handled_threads:
-            if IS_TESTING: print(f'[capture_thread][{thread_url}] skip, already visited')
+            if VERBOSE: print(f'[capture_thread][{thread_url}] skip, already visited')
             return
 
     ################### go through uncaptured subpages captured
@@ -225,21 +248,22 @@ def capture_thread(
         #print(thread_details)
         handled_subpage_ids = thread_details.get('handled_subpage_ids',[])
         #print(handled_subpage_ids)
-        if IS_TESTING: print(f'[capture_thread][{thread_url}] handled_subpage_ids = {handled_subpage_ids}')
+        if VERBOSE: print(f'[capture_thread][{thread_url}] handled_subpage_ids = {handled_subpage_ids}')
 
         # capture unhandled pages
         newly_handled_subpage_ids = []
         for subpage_id in range(1,total_subpages+1):
             if subpage_id in handled_subpage_ids:
                 # ignore
-                if IS_TESTING: print(f'[capture_thread][{thread_url}] ignore')
+                if VERBOSE: print('.',end='') # same line
             else:
                 # handle
-                if IS_TESTING: print(f'[capture_thread][{thread_url}] handle')
+                if VERBOSE: print('x',end='') # same line
                 capture_res = capture_thread_subpage(browser, thread_id,subpage_id)
                 if capture_res:
                     newly_handled_subpage_ids.append(subpage_id)
-        
+        if VERBOSE: print() # new line
+
         # batch updated newly handled subpages
         handled_threads = handled_subpage_ids + newly_handled_subpage_ids
         update_thread_handled_subpage_ids(thread_url,thread_id,handled_threads)
@@ -249,11 +273,11 @@ def capture_thread(
         thread_load_failure(thread_url,thread_id)
         return
 
-################################# SCRAPE PARAMS
-from scrape_params import user_agents,proxies_list
-
 ################################# RUN SETTINGS
-IS_TESTING = True
+# ref
+from scrape_params import proxy_list,proxy_df
+
+VERBOSE = True
 WORKERS = 50
 THREAD_FROM = 1
 THREAD_TO = 10
@@ -267,12 +291,21 @@ LONG_WAIT_MIN, LONG_WAIT_MAX = 60, 120
 
 #%%
 ################################# START
-browser = get_browser()
+browser = get_browser(proxy_list)
+browser = get_browser(proxy_df)
+
+
+
+thread_subpage_url = thread_id_and_subpage_id_to_url(1,1)
+
+# load webpage
+browser.get(thread_subpage_url)
 
 #%%
 capture_thread(browser,1,SKIP_VISITED_THREADS)
 capture_thread(browser,2,SKIP_VISITED_THREADS)
 capture_thread(browser,3,SKIP_VISITED_THREADS)
+#%%
 capture_thread(browser,4,SKIP_VISITED_THREADS)
 #capture_thread(browser,3716261,SKIP_VISITED_THREADS)
 
@@ -284,19 +317,7 @@ if browser is not None:
 
 #%%
 
-if(len(sys.argv)<2):
-    print("no post ID found")
-    sys.exit()
-
-print("***simple scrape lihkg ***")
-print("Finished")
-
-# %%
-
-
 # capture_thread(1)
-
-
 # close chromedriver
 
 #%%
