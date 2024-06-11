@@ -1,33 +1,91 @@
 #%%
 
+from typing import List, Dict
+import json
 import os
-import sys
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+import random
+import time
+import argparse
+import queue
+import threading
+
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import random
 
-from typing import List, Dict
-import json
+from fake_useragent import UserAgent
+
 #pip install chromedriver-autoinstaller
 import chromedriver_autoinstaller
 chromedriver_autoinstaller.install()
 
-import threading
+parser = argparse.ArgumentParser(description='LIHKG scraper')
+parser.add_argument('--name', help='scrape prefix', default='lihkg')
+parser.add_argument('--start', help='first thread id', type=int, default=1)
+parser.add_argument('--stop', help='last thread id', type=int, default=10)
+parser.add_argument('--threads', help='number of threads', type=int, default=1)
+parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, default=True)
+parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
+parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
+parser.add_argument('--short_wait_min', help='short wait min seconds', type=int, default=5)
+parser.add_argument('--short_wait_max', help='short wait max seconds', type=int, default=10)
+parser.add_argument('--long_wait_min', help='long wait min seconds', type=int, default=30)
+parser.add_argument('--long_wait_max', help='long wait max seconds', type=int, default=60)
+
+args = parser.parse_args()
+
 lock = threading.Lock()
 
+
 ############### chromedriver
-# init
-def get_browser():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--disable-popup-blocking")
-    #chrome_options.add_argument(f'--proxy-server={random.choice(proxies_list)}')
-    #chrome_options.add_argument(f"--user-agent={random.choice(user_agents)}")
-    browser = webdriver.Chrome(options=chrome_options)
+'''
+# init seleniumwire
+from seleniumwire import webdriver  # Import from seleniumwire
+import seleniumwire.undetected_chromedriver as uc
+
+def get_browser(proxy_list):
+    chrome_options = uc.ChromeOptions()
+    chrome_options.add_argument('start-maximized')
+
+    # user agent
+    ua = UserAgent()
+    chrome_options.add_argument(f"--user-agent={ua.random}")
+
+    # proxy ip
+    sw_options = {
+        'proxy': {
+            'https': random.choice(proxy_list)
+        }
+    }
+
+    driver = webdriver.Chrome(
+        options=chrome_options,
+        seleniumwire_options=sw_options,
+    )
+
+    return driver
+'''
+
+############### chromedriver
+# init selenium
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+def get_browser(proxy_list):
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-popup-blocking")
+    options.add_argument("--log-level=1")
+
+    # user agent
+    ua = UserAgent()
+    options.add_argument(f"--user-agent={ua.random}")
+
+    # proxy
+    if USE_PROXY_IP:
+        options.add_argument(f'--proxy-server={random.choice(proxy_list)}')
+
+    browser = webdriver.Chrome(options=options)
     return browser
 
 ############### json utils
@@ -118,33 +176,6 @@ def write_comments_to_jsonl(url: str, topic: str, title: str, comments: List[str
                 #print(f'[write_comments_to_jsonl] {line}')
                 f.write(line + '\n') # write line
 
-
-'''
-def capture_subpage_success(filepath: str, url: str):
-    with lock:
-        with open(filepath, 'a') as f:
-            f.write(url + '\n')
-
-def remove_url_from_txt_file(filepath: str, url: str):
-    # create tmp file
-    tmp_filepath = filepath.replace('.txt','_tmp.txt')
-    with open(filepath, 'r') as f1:
-        with open(tmp_filepath, 'w') as f2:
-            for line in f1:
-                if line != url:
-                    f2.write(line + '\n')
-    
-    # overwrite existing file
-    os.rename(tmp_filepath,filepath)
-
-def capture_thread_success(thread_url: str):
-    with lock:
-        with open(THREAD_SUCCESS_JSON, 'a') as f:
-            f.write(thread_url + '\n')
-
-'''
-#3706516
-
 # capture comments in thread subpage
 def capture_thread_subpage(
     browser: webdriver.Chrome,
@@ -158,7 +189,7 @@ def capture_thread_subpage(
         
         # load webpage
         browser.get(thread_subpage_url)
-        if IS_TESTING: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
+        #if VERBOSE: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
         element_present = EC.presence_of_element_located((By.CLASS_NAME, '_2cNsJna0_hV8tdMj3X6_gJ'))
         WebDriverWait(browser, WEBDRIVER_TIMEOUT).until(element_present)
 
@@ -194,7 +225,7 @@ def capture_thread(
     skip_partial_thread_successes: bool = False, # should ignore threads with partial successes
 ) -> int:
     '''
-    thread_id=4
+    thread_id=3
     '''
     ################### ref data
     thread_url = thread_id_to_url(thread_id) # thread_url
@@ -204,7 +235,7 @@ def capture_thread(
     if skip_partial_thread_successes:
         # dont revisit thread if something previously saved
         if thread_url in handled_threads:
-            if IS_TESTING: print(f'[capture_thread][{thread_url}] skip, already visited')
+            if VERBOSE: print(f'[capture_thread][{thread_url}] skip, already visited')
             return
 
     ################### go through uncaptured subpages captured
@@ -225,20 +256,21 @@ def capture_thread(
         #print(thread_details)
         handled_subpage_ids = thread_details.get('handled_subpage_ids',[])
         #print(handled_subpage_ids)
-        if IS_TESTING: print(f'[capture_thread][{thread_url}] handled_subpage_ids = {handled_subpage_ids}')
+        if VERBOSE: print(f'[capture_thread][{thread_url}] handled_subpage_ids = {handled_subpage_ids}')
 
         # capture unhandled pages
         newly_handled_subpage_ids = []
         for subpage_id in range(1,total_subpages+1):
             if subpage_id in handled_subpage_ids:
                 # ignore
-                if IS_TESTING: print(f'[capture_thread][{thread_url}] ignore')
+                if VERBOSE: print('.',end='') # same line
             else:
                 # handle
-                if IS_TESTING: print(f'[capture_thread][{thread_url}] handle')
+                if VERBOSE: print('x',end='') # same line
                 capture_res = capture_thread_subpage(browser, thread_id,subpage_id)
                 if capture_res:
                     newly_handled_subpage_ids.append(subpage_id)
+        if VERBOSE: print() # new line
         
         # batch updated newly handled subpages
         handled_threads = handled_subpage_ids + newly_handled_subpage_ids
@@ -249,61 +281,122 @@ def capture_thread(
         thread_load_failure(thread_url,thread_id)
         return
 
-################################# SCRAPE PARAMS
-from scrape_params import user_agents,proxies_list
+# Define a thread worker function
+def worker(q, proxy_list):
+    browser = get_browser(proxy_list)
 
+    while True:
+        # get thread_id
+        thread_id = q.get()
+        if thread_id is None:  # poison pill, exit the thread
+            break
+
+        # sleep
+        short_wait = random.uniform(SHORT_WAIT_MIN, SHORT_WAIT_MAX)
+        long_wait = 0
+        time.sleep(short_wait)
+        if random.random() < 0.2:
+            long_wait = random.uniform(LONG_WAIT_MIN, LONG_WAIT_MAX)
+            time.sleep(long_wait)
+
+        if VERBOSE: print(short_wait,long_wait)
+        capture_thread(browser,thread_id)
+
+    if browser is not None:
+        browser.quit()
+
+#%%
 ################################# RUN SETTINGS
-IS_TESTING = True
-WORKERS = 50
-THREAD_FROM = 1
-THREAD_TO = 10
-OUTPUT_FILE_PREFIX = f'lihkg_{THREAD_FROM}_{THREAD_TO}'
-THREAD_STATUS_JSON = f'assets/scrapes/{OUTPUT_FILE_PREFIX}_status.json'
-THREAD_COMMENTS_JSONL = f'assets/scrapes/{OUTPUT_FILE_PREFIX}.jsonl'
-WEBDRIVER_TIMEOUT = 10
-SKIP_VISITED_THREADS = False
-SHORT_WAIT_MIN, SHORT_WAIT_MAX = 5, 10
-LONG_WAIT_MIN, LONG_WAIT_MAX = 60, 120
+# ref
+from scrape_params import proxy_list
+
+# settings
+if True:
+    VERBOSE = args.verbose
+    WORKERS = args.workers
+    THREAD_FROM = args.start
+    THREAD_TO = args.finish
+    WEBDRIVER_TIMEOUT = args.webdriver_timeout
+    SKIP_VISITED_THREADS = args.ignore_handled
+    SHORT_WAIT_MIN = args.short_wait_min
+    SHORT_WAIT_MAX = args.short_wait_max
+    LONG_WAIT_MIN = args.long_wait_min
+    LONG_WAIT_MAX = args.long_wait_max
+else:
+    VERBOSE = True
+    WORKERS = 5
+    THREAD_FROM = 1
+    THREAD_TO = 100
+    WEBDRIVER_TIMEOUT = 10
+    SKIP_VISITED_THREADS = False
+    SHORT_WAIT_MIN, SHORT_WAIT_MAX = 5, 10
+    LONG_WAIT_MIN, LONG_WAIT_MAX = 30, 60
+
+if True:
+    USE_PROXY_IP = False
+    OUTPUT_FILE_PREFIX = f'lihkg_{THREAD_FROM}_{THREAD_TO}'
+    THREAD_STATUS_JSON = f'assets/scrapes/{OUTPUT_FILE_PREFIX}_status.json'
+    THREAD_COMMENTS_JSONL = f'assets/scrapes/{OUTPUT_FILE_PREFIX}.jsonl'
+
+if False:
+    #%%
+    ################################# START
+    browser = get_browser(proxy_list)
+
+    capture_thread(browser,1,SKIP_VISITED_THREADS)
+    capture_thread(browser,2,SKIP_VISITED_THREADS)
+    capture_thread(browser,3,SKIP_VISITED_THREADS)
+    capture_thread(browser,4,SKIP_VISITED_THREADS)
+    #capture_thread(browser,3716261,SKIP_VISITED_THREADS)
+
+    #capture_thread_subpage(browser,3716261,1)
+    #%%
+
+
+    #%%
+    capture_thread_subpage(browser,4,1)
+    capture_thread(browser,4)
+
+
+################################# POPULATE QUEUE
+# queue to hold threads to be scraped
+q = queue.Queue()
+
+# add thread ids to queue
+for url in range(THREAD_FROM,THREAD_TO):
+    q.put(url)
+
+# poison pills to kill threads
+for _ in range(WORKERS):
+    q.put(None)
 
 #%%
-################################# START
-browser = get_browser()
+################################# POPULATE THREADS
+# Create a list to hold the threads
+lock = threading.Lock()
+threads = []
+
+# Create and start the threads
+for i in range(WORKERS):
+    t = threading.Thread(target=worker, args=(q, proxy_list))
+    t.start()
+    threads.append(t)
+
+################################# KICK OFF MULTITHREADED RUN
+# Wait for all threads to finish
+for t in threads:
+    t.join()
 
 #%%
-capture_thread(browser,1,SKIP_VISITED_THREADS)
-capture_thread(browser,2,SKIP_VISITED_THREADS)
-capture_thread(browser,3,SKIP_VISITED_THREADS)
-capture_thread(browser,4,SKIP_VISITED_THREADS)
-#capture_thread(browser,3716261,SKIP_VISITED_THREADS)
 
-#capture_thread_subpage(browser,3716261,1)
-#%%
-
-if browser is not None:
-    browser.quit()
-
-#%%
-
-if(len(sys.argv)<2):
-    print("no post ID found")
-    sys.exit()
-
-print("***simple scrape lihkg ***")
-print("Finished")
-
-# %%
+# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ nohup python scrape_threads_mt.py -start 1 -stop 250000 -threads 50 > scrape_threads_mt_1_250000.out 2>&1 &
+# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ less scrape_threads_mt_1_250000.out 
 
 
-# capture_thread(1)
-
-
-# close chromedriver
-
-#%%
-capture_thread_subpage(browser,4,1)
-capture_thread(browser,4)
-
-# %%
-
-
-
+parser.add_argument('--name', help='scrape prefix', default='lihkg')
+parser.add_argument('--start', help='first thread id', type=int, default=1)
+parser.add_argument('--stop', help='last thread id', type=int, default=10)
+parser.add_argument('--threads', help='number of threads', type=int, default=1)
+parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, default=True)
+parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
+parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
