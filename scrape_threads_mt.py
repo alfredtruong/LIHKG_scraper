@@ -1,3 +1,9 @@
+# APIs
+# https://amp.lihkg.com/thread/3612930/page/28
+
+# multithreading (with request
+# https://medium.com/@anonymousmaharaj/proxy-and-mulithreading-for-requests-solving-the-429-too-many-requests-problem-in-python-6f64d8b40424
+
 #%%
 
 # how to install chromedriver on linux
@@ -12,17 +18,20 @@ import argparse
 import queue
 import threading
 
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
 
 from fake_useragent import UserAgent
 
 #pip install chromedriver-autoinstaller
 import chromedriver_autoinstaller
 chromedriver_autoinstaller.install()
+
+from bs4 import BeautifulSoup
 
 lock = threading.Lock()
 
@@ -57,9 +66,7 @@ def get_browser(proxy_list):
 
 ############### chromedriver
 # init selenium
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-def get_browser(proxy_list):
+def get_browser(proxy_list: List[str]) -> webdriver.Chrome:
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-popup-blocking")
@@ -73,12 +80,13 @@ def get_browser(proxy_list):
     if USE_PROXY_IP:
         chrome_options.add_argument(f'--proxy-server={random.choice(proxy_list)}')
 
+    # build and return
     browser = webdriver.Chrome(options=chrome_options)
     return browser
 
 ############### json utils
 # read file
-def read_json(filepath: str):
+def read_json(filepath: str) -> Dict[str,object]:
     # load
     try:
         with open(filepath, 'r') as f:
@@ -89,14 +97,14 @@ def read_json(filepath: str):
     return data
 
 # save file
-def write_json(filepath: str, dico: Dict[str,object]):
+def write_json(filepath: str, dico: Dict[str,object]) -> None:
     # overwrite
     with open(filepath, 'w') as f:
         json.dump(dico, f)
 
 ############### thread status file
 # log failure to load
-def thread_load_failure(thread_url: str, thread_id: int):
+def thread_load_failure(thread_url: str, thread_id: int) -> None:
     with lock:
         # read dico from file
         thread_status_dico = read_json(THREAD_STATUS_JSON)
@@ -116,7 +124,7 @@ def thread_load_failure(thread_url: str, thread_id: int):
         write_json(THREAD_STATUS_JSON, thread_status_dico)
 
 # log handled subpage ids
-def update_thread_handled_subpage_ids(thread_url: str, thread_id: int, handled_threads: List[int]):
+def update_thread_handled_subpage_ids(thread_url: str, thread_id: int, handled_threads: List[int]) -> None:
     with lock:
         # read dico from file
         thread_status_dico = read_json(THREAD_STATUS_JSON)
@@ -139,7 +147,7 @@ def update_thread_handled_subpage_ids(thread_url: str, thread_id: int, handled_t
 
 ############### thread comments file
 # add scraped comments
-def write_comments_to_jsonl(url: str, topic: str, title: str, comments: List[str]):
+def write_comments_to_jsonl(url: str, topic: str, title: str, comments: List[str]) -> None:
     # check if file exists, create directory if it doesn't
     dir_path = os.path.dirname(THREAD_COMMENTS_JSONL)
     if not os.path.exists(dir_path):
@@ -325,13 +333,15 @@ def capture_thread(
         return
 
 # Define a thread worker function
-def worker(q, proxy_list):
+def worker(q: queue, proxy_list) -> None:
+    # init browser
     browser = get_browser(proxy_list)
 
+    # loop till poison pill
     while True:
         # get thread_id
         thread_id = q.get()
-        if thread_id is None:  # poison pill, exit the thread
+        if thread_id is None:  # if poison pill, exit thread
             break
 
         # sleep
@@ -343,8 +353,9 @@ def worker(q, proxy_list):
             time.sleep(long_wait)
 
         if VERBOSE: print(short_wait,long_wait)
-        capture_thread(browser,thread_id)
+        capture_thread(browser,thread_id,SKIP_VISITED_THREADS)
 
+    print('done')
     if browser is not None:
         browser.quit()
 
@@ -460,3 +471,13 @@ parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, 
 parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
 parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
 '''
+
+# nohup python scrape_threads_mt.py --start 1       --stop 250000  --threads 10 --ignore_handled True > scrape_threads_mt_1_250000.out 2>&1
+# nohup python scrape_threads_mt.py --start 250000  --stop 500001  --threads 10 --ignore_handled True > scrape_threads_mt_0250000_0500001.out 2>&1
+# nohup python scrape_threads_mt.py --start 500001  --stop 1000001 --threads 10 --ignore_handled True > scrape_threads_mt_0500001_1000001.out 2>&1
+# nohup python scrape_threads_mt.py --start 1000001 --stop 1500001 --threads 10 --ignore_handled True > scrape_threads_mt_1000001_1500001.out 2>&1
+# nohup python scrape_threads_mt.py --start 1500001 --stop 2000001 --threads 10 --ignore_handled True > scrape_threads_mt_1500001_2000001.out 2>&1
+# nohup python scrape_threads_mt.py --start 2000001 --stop 2500001 --threads 10 --ignore_handled True > scrape_threads_mt_2000001_2500001.out 2>&1
+# nohup python scrape_threads_mt.py --start 2500001 --stop 3000001 --threads 10 --ignore_handled True > scrape_threads_mt_2500001_3000001.out 2>&1
+# nohup python scrape_threads_mt.py --start 3000001 --stop 3500001 --threads 10 --ignore_handled True > scrape_threads_mt_3000001_3500001.out 2>&1
+# nohup python scrape_threads_mt.py --start 3500001 --stop 3720000 --threads 10 --ignore_handled True > scrape_threads_mt_3500001_3720000.out 2>&1

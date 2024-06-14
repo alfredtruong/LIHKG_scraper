@@ -1,5 +1,5 @@
 __pycache__
-1Exported.txt
-*.json
-*.jsonl
+assets/
+seleniumbase/
+testing_*
 *.out
