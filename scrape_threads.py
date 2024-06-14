@@ -1,5 +1,7 @@
 #%%
 
+# export PATH="/home/alfred/nfs/code/chromedriver:$PATH"
+
 from typing import List, Dict
 import json
 import os
@@ -13,9 +15,15 @@ from selenium.webdriver.common.by import By
 
 from fake_useragent import UserAgent
 
+from selenium import webdriver
+#from webdriver_manager.chrome import ChromeDriverManager
+
+#driver = webdriver.Chrome(ChromeDriverManager().install())
+
+
 #pip install chromedriver-autoinstaller
-import chromedriver_autoinstaller
-chromedriver_autoinstaller.install()
+#import chromedriver_autoinstaller
+#chromedriver_autoinstaller.install()
 
 lock = threading.Lock()
 
@@ -23,39 +31,49 @@ lock = threading.Lock()
 # init selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-def get_browser(proxy_list):
+def get_browser_list(proxy_list):
     chrome_options = Options()
-    #chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-popup-blocking")
     chrome_options.add_argument("--log-level=1")
+    #chrome_options.add_argument("--disable-dev-shm-usage")
+    #chrome_options.add_argument("--no-sandbox")
     # user agent
     ua = UserAgent()
     chrome_options.add_argument(f"--user-agent={ua.random}")
     # proxy ip
-    proxy_ip = random.choice(proxy_list)
-    chrome_options.add_argument(f'--proxy-server={proxy_ip}')
+    if USE_PROXY_IP:
+        proxy_ip = random.choice(proxy_list)
+        print(proxy_ip)
+        chrome_options.add_argument(f'--proxy-server={proxy_ip}')
     # build and return
-    browser = webdriver.Chrome(options=chrome_options)
-    return browser
+    driver = webdriver.Chrome(options=chrome_options)
+    return driver
 
-def get_browser(proxy_df):
+def get_browser_df(proxy_df):
     chrome_options = Options()
-    #chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-popup-blocking")
     chrome_options.add_argument("--log-level=1")
+    #chrome_options.add_argument("--disable-dev-shm-usage")
+    #chrome_options.add_argument("--no-sandbox")
     # user agent
     ua = UserAgent()
     chrome_options.add_argument(f"--user-agent={ua.random}")
+
     # proxy ip
-    proxy_ip = proxy_df.sample(1).to_dict()
-    chrome_options.add_argument(f"--proxy-server={proxy_ip['ip']}:{proxy_ip['port']}")
+    if USE_PROXY_IP:
+        proxy_ip = proxy_df.sample(1).values.flatten().tolist()
+        print(proxy_ip)
+        chrome_options.add_argument(f"--proxy-server={proxy_ip[0]}:{proxy_ip[0]}")
+
     # build and return
     browser = webdriver.Chrome(options=chrome_options)
     return browser
 
 ############### json utils
 # read file
-def read_json(filepath: str):
+def read_json(filepath: str) -> Dict[str,object]:
     # load
     try:
         with open(filepath, 'r') as f:
@@ -66,14 +84,14 @@ def read_json(filepath: str):
     return data
 
 # save file
-def write_json(filepath: str, dico: Dict[str,object]):
+def write_json(filepath: str, dico: Dict[str,object]) -> None:
     # overwrite
     with open(filepath, 'w') as f:
         json.dump(dico, f)
 
 ############### thread status file
 # log failure to load
-def thread_load_failure(thread_url: str, thread_id: int):
+def thread_load_failure(thread_url: str, thread_id: int) -> None:
     with lock:
         # read dico from file
         thread_status_dico = read_json(THREAD_STATUS_JSON)
@@ -93,7 +111,7 @@ def thread_load_failure(thread_url: str, thread_id: int):
         write_json(THREAD_STATUS_JSON, thread_status_dico)
 
 # log handled subpage ids
-def update_thread_handled_subpage_ids(thread_url: str, thread_id: int, handled_threads: List[int]):
+def update_thread_handled_subpage_ids(thread_url: str, thread_id: int, handled_threads: List[int]) -> None:
     with lock:
         # read dico from file
         thread_status_dico = read_json(THREAD_STATUS_JSON)
@@ -116,7 +134,7 @@ def update_thread_handled_subpage_ids(thread_url: str, thread_id: int, handled_t
 
 ############### thread comments file
 # add scraped comments
-def write_comments_to_jsonl(url: str, topic: str, title: str, comments: List[str]):
+def write_comments_to_jsonl(url: str, topic: str, title: str, comments: List[str]) -> None:
     # check if file exists, create directory if it doesn't
     dir_path = os.path.dirname(THREAD_COMMENTS_JSONL)
     if not os.path.exists(dir_path):
@@ -174,7 +192,11 @@ def capture_thread_subpage(
     thread_id: int,
     subpage_id: int,
 ) -> bool:
-    # thread_id,subpage_id=1,1
+    '''
+    thread_id,subpage_id=1,1
+    thread_id,subpage_id=2367593,1
+    thread_id,subpage_id=26,28
+    '''
     try:
         # generate url
         thread_subpage_url = thread_id_and_subpage_id_to_url(thread_id,subpage_id)
@@ -222,7 +244,8 @@ def capture_thread(
     ################### ref data
     thread_url = thread_id_to_url(thread_id) # thread_url
     handled_threads = read_json(THREAD_STATUS_JSON) # load previously handled threads
-    
+    print('start')
+
     ################### should revisit previously handled threads?
     if skip_partial_thread_successes:
         # dont revisit thread if something previously saved
@@ -234,8 +257,10 @@ def capture_thread(
     try:
         # load main page
         browser.get(thread_url)
+        print('got')
         element_present = EC.presence_of_element_located((By.CLASS_NAME, '_36ZEkSvpdj_igmog0nluzh'))
         WebDriverWait(browser, WEBDRIVER_TIMEOUT).until(element_present)
+        print('waited')
 
         # identify count of subpages
         content = browser.find_element(By.CLASS_NAME,'_1H7LRkyaZfWThykmNIYwpH') # get page container
@@ -278,6 +303,7 @@ def capture_thread(
 from scrape_params import proxy_list,proxy_df
 
 VERBOSE = True
+USE_PROXY_IP = True
 WORKERS = 50
 THREAD_FROM = 1
 THREAD_TO = 10
@@ -291,15 +317,10 @@ LONG_WAIT_MIN, LONG_WAIT_MAX = 60, 120
 
 #%%
 ################################# START
-browser = get_browser(proxy_list)
-browser = get_browser(proxy_df)
+browser = get_browser_list(proxy_list)
+#browser = get_browser_df(proxy_df)
+#%%
 
-
-
-thread_subpage_url = thread_id_and_subpage_id_to_url(1,1)
-
-# load webpage
-browser.get(thread_subpage_url)
 
 #%%
 capture_thread(browser,1,SKIP_VISITED_THREADS)

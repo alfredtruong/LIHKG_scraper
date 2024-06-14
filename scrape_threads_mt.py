@@ -1,3 +1,7 @@
+#%%
+
+# export PATH="/home/alfred/nfs/code/chromedriver:$PATH"
+
 # APIs
 # https://amp.lihkg.com/thread/3612930/page/28
 
@@ -28,8 +32,8 @@ from selenium.webdriver.common.by import By
 from fake_useragent import UserAgent
 
 #pip install chromedriver-autoinstaller
-import chromedriver_autoinstaller
-chromedriver_autoinstaller.install()
+#import chromedriver_autoinstaller
+#chromedriver_autoinstaller.install()
 
 from bs4 import BeautifulSoup
 
@@ -76,9 +80,9 @@ def get_browser(proxy_list: List[str]) -> webdriver.Chrome:
     ua = UserAgent()
     chrome_options.add_argument(f"--user-agent={ua.random}")
 
-    # proxy
+    # proxy ip
     if USE_PROXY_IP:
-        chrome_options.add_argument(f'--proxy-server={random.choice(proxy_list)}')
+        chrome_options.add_argument(f"--proxy-server={random.choice(proxy_list)}")
 
     # build and return
     browser = webdriver.Chrome(options=chrome_options)
@@ -281,7 +285,8 @@ def capture_thread(
     ################### ref data
     thread_url = thread_id_to_url(thread_id) # thread_url
     handled_threads = read_json(THREAD_STATUS_JSON) # load previously handled threads
-    
+    print('start')
+
     ################### should revisit previously handled threads?
     if skip_partial_thread_successes:
         # dont revisit thread if something previously saved
@@ -293,8 +298,10 @@ def capture_thread(
     try:
         # load main page
         browser.get(thread_url)
+        print('got')
         element_present = EC.presence_of_element_located((By.CLASS_NAME, '_36ZEkSvpdj_igmog0nluzh'))
         WebDriverWait(browser, WEBDRIVER_TIMEOUT).until(element_present)
+        print('waited')
 
         # identify count of subpages
         content = browser.find_element(By.CLASS_NAME,'_1H7LRkyaZfWThykmNIYwpH') # get page container
@@ -449,18 +456,15 @@ threads = []
 # Create and start the threads
 for i in range(WORKERS):
     t = threading.Thread(target=worker, args=(q, proxy_list))
+    t.daemon = True  # Set the thread as a daemon
     t.start()
     threads.append(t)
 
 ################################# KICK OFF MULTITHREADED RUN
-# Wait for all threads to finish
-for t in threads:
-    t.join()
-
+# Wait for the queue to be empty
+while not q.empty():
+    time.sleep(1)
 #%%
-
-# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ nohup python scrape_threads_mt.py --start 1 --stop 250000 --threads 5 --ignore_handled False > scrape_threads_mt_1_250000.out 2>&1 &
-# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ less scrape_threads_mt_1_250000.out 
 
 '''
 parser.add_argument('--name', help='scrape prefix', default='lihkg')
@@ -472,12 +476,42 @@ parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
 parser.add_argument('--webdriver_timeout', help='max thread load time', type=int, default=10)
 '''
 
-# nohup python scrape_threads_mt.py --start 1       --stop 250000  --threads 10 --ignore_handled True > scrape_threads_mt_1_250000.out 2>&1
-# nohup python scrape_threads_mt.py --start 250000  --stop 500001  --threads 10 --ignore_handled True > scrape_threads_mt_0250000_0500001.out 2>&1
-# nohup python scrape_threads_mt.py --start 500001  --stop 1000001 --threads 10 --ignore_handled True > scrape_threads_mt_0500001_1000001.out 2>&1
-# nohup python scrape_threads_mt.py --start 1000001 --stop 1500001 --threads 10 --ignore_handled True > scrape_threads_mt_1000001_1500001.out 2>&1
-# nohup python scrape_threads_mt.py --start 1500001 --stop 2000001 --threads 10 --ignore_handled True > scrape_threads_mt_1500001_2000001.out 2>&1
-# nohup python scrape_threads_mt.py --start 2000001 --stop 2500001 --threads 10 --ignore_handled True > scrape_threads_mt_2000001_2500001.out 2>&1
-# nohup python scrape_threads_mt.py --start 2500001 --stop 3000001 --threads 10 --ignore_handled True > scrape_threads_mt_2500001_3000001.out 2>&1
-# nohup python scrape_threads_mt.py --start 3000001 --stop 3500001 --threads 10 --ignore_handled True > scrape_threads_mt_3000001_3500001.out 2>&1
-# nohup python scrape_threads_mt.py --start 3500001 --stop 3720000 --threads 10 --ignore_handled True > scrape_threads_mt_3500001_3720000.out 2>&1
+
+# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ nohup python scrape_threads_mt.py --start 1 --stop 250000 --threads 5 --ignore_handled False > scrape_threads_mt_1_250000.out 2>&1 &
+# (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ less scrape_threads_mt_1_250000.out 
+
+# nohup python3 scrape_threads_mt.py --start 1       --stop 250000  --threads 10 --ignore_handled True > scrape_threads_mt_1_250000.out 2>&1
+# nohup python3 scrape_threads_mt.py --start 250000  --stop 500001  --threads 10 --ignore_handled True > scrape_threads_mt_0250000_0500001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 500001  --stop 1000001 --threads 10 --ignore_handled True > scrape_threads_mt_0500001_1000001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 1000001 --stop 1500001 --threads 10 --ignore_handled True > scrape_threads_mt_1000001_1500001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 1500001 --stop 2000001 --threads 10 --ignore_handled True > scrape_threads_mt_1500001_2000001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 2000001 --stop 2500001 --threads 10 --ignore_handled True > scrape_threads_mt_2000001_2500001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 2500001 --stop 3000001 --threads 10 --ignore_handled True > scrape_threads_mt_2500001_3000001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3000001 --stop 3500001 --threads 10 --ignore_handled True > scrape_threads_mt_3000001_3500001.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3500001 --stop 3720000 --threads 10 --ignore_handled True > scrape_threads_mt_3500001_3720000.out 2>&1 &
+
+#out_lihkg-2750000.csv
+#out_lihkg-2800000.csv
+
+# THIS DOESNT WORK COS nohup RUN WITHIN ENVIRONMENT, NEED TO RUN nohup OUTSIDE ENVIRONMENT
+# nohup python3 scrape_threads_mt.py --start 2850000 --stop 2900000 --threads 10 --ignore_handled True > scrape_threads_mt_2850000_2900000_g12.out 2>&1 & 
+# nohup python3 scrape_threads_mt.py --start 2900000 --stop 2950000 --threads 10 --ignore_handled True > scrape_threads_mt_2900000_2950000_g13.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 2950000 --stop 3000000 --threads 10 --ignore_handled True > scrape_threads_mt_2950000_3000000_g14.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3000000 --stop 3050000 --threads 10 --ignore_handled True > scrape_threads_mt_3000000_3050000_g15.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3050000 --stop 3100000 --threads 10 --ignore_handled True > scrape_threads_mt_3050000_3100000_g16.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3100000 --stop 3150000 --threads 10 --ignore_handled True > scrape_threads_mt_3100000_3150000_g17.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3150000 --stop 3200000 --threads 10 --ignore_handled True > scrape_threads_mt_3150000_3200000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3200000 --stop 3250000 --threads 10 --ignore_handled True > scrape_threads_mt_3200000_3250000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3250000 --stop 3300000 --threads 10 --ignore_handled True > scrape_threads_mt_3250000_3300000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3300000 --stop 3350000 --threads 10 --ignore_handled True > scrape_threads_mt_3300000_3350000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3350000 --stop 3400000 --threads 10 --ignore_handled True > scrape_threads_mt_3350000_3400000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3400000 --stop 3450000 --threads 10 --ignore_handled True > scrape_threads_mt_3400000_3450000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3450000 --stop 3500000 --threads 10 --ignore_handled True > scrape_threads_mt_3450000_3500000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3500000 --stop 3550000 --threads 10 --ignore_handled True > scrape_threads_mt_3500000_3550000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3550000 --stop 3600000 --threads 10 --ignore_handled True > scrape_threads_mt_3550000_3600000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3600000 --stop 3650000 --threads 10 --ignore_handled True > scrape_threads_mt_3600000_3650000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3650000 --stop 3700000 --threads 10 --ignore_handled True > scrape_threads_mt_3650000_3700000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3700000 --stop 3750000 --threads 10 --ignore_handled True > scrape_threads_mt_3700000_3750000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3750000 --stop 3800000 --threads 10 --ignore_handled True > scrape_threads_mt_3750000_3800000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3800000 --stop 3850000 --threads 10 --ignore_handled True > scrape_threads_mt_3800000_3850000.out 2>&1 &
+# nohup python3 scrape_threads_mt.py --start 3850000 --stop 3900000 --threads 10 --ignore_handled True > scrape_threads_mt_3850000_3900000.out 2>&1 &

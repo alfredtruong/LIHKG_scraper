@@ -1,0 +1,50 @@
+##########################################
+# run scraper
+##########################################
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2850000 --stop 2950000 --machine g12
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2950000 --stop 3050000 --machine g13
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3050000 --stop 3150000 --machine g14
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3150000 --stop 3250000 --machine g15
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3250000 --stop 3350000 --machine g16
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3350000 --stop 3450000 --machine g17
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3450000 --stop 3550000 --machine gxx
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3550000 --stop 3650000 --machine gxx
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3650000 --stop 3750000 --machine gxx
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3750000 --stop 3850000 --machine gxx
+
+
+##########################################
+# build environment
+##########################################
+(base) alfred@net-g14:~/nfs/code$ conda activate  nlp_env
+(nlp_env) alfred@net-g14:~/nfs/code$ pip list --format=freeze > requirements.txt
+(base) alfred@net-g14:~/nfs/code$ python3 -m pip install virtualenv
+(base) alfred@net-g14:~/nfs/code$ python3 -m venv nlp
+(base) alfred@net-g14:~/nfs/code$ source nlp/bin/activate
+(base) alfred@net-g14:~/nfs/code$ 
+source ~/nfs/code/nlp/bin/activate
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper
+pip install -r requirements.txt
+
+python3 -m pip install selenium
+python3 -m pip install bs4
+python3 -m pip install pandas
+python3 -m pip install fake_useragent
+
+source ~/nfs/code/nlp/bin/activate
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper
+
+##########################################
+# kill bad runs
+##########################################
+# ps aux | grep alfred | grep selenium | awk '{print $2}' | xargs kill -9
+# ps aux | grep alfred | grep scrape | awk '{print $2}' | xargs kill -9
+
+# ps aux | grep alfred
+# ps aux | grep alfred | grep scrape
+
+
+##########################################
+# fix rights
+##########################################
+# chmod 777 nohup_python_script.*
