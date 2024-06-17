@@ -85,6 +85,7 @@ def get_browser(proxy_list: List[str]) -> webdriver.Chrome:
         chrome_options.add_argument(f"--proxy-server={random.choice(proxy_list)}")
 
     # build and return
+    time.sleep(random.uniform(0, 10))
     browser = webdriver.Chrome(options=chrome_options)
     return browser
 
