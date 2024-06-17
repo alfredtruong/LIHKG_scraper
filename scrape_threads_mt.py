@@ -75,6 +75,7 @@ def get_browser(proxy_list: List[str]) -> webdriver.Chrome:
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-popup-blocking")
     chrome_options.add_argument("--log-level=1")
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
 
     # user agent
     ua = UserAgent()
