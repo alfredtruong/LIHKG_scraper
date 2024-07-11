@@ -51,3 +51,18 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 
 # fix rights
 ##########################################
 # chmod 777 nohup_python_script.*
+
+##########################################
+# install miniconda
+##########################################
+# alfred@net-g13:/nfs/alfred/code/LIHKG/LIHKG_scraper$ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# alfred@net-g13:/nfs/alfred/code/LIHKG/LIHKG_scraper$ bash Miniconda3-latest-Linux-x86_64.sh
+
+# check if python installed
+ll ~/nfs/code/nlp/bin/
+# install python
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; bash Miniconda3-latest-Linux-x86_64.sh -b
+# check if python installed
+ll ~/nfs/code/nlp/bin/
+# check selenium processes
+ps aux | grep alfred | grep selenium | awk '{print $2}' | wc -l
