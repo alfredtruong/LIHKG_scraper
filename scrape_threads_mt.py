@@ -192,7 +192,8 @@ def capture_thread_subpage(
     try:
         # generate url
         thread_subpage_url = thread_id_and_subpage_id_to_url(thread_id,subpage_id)
-        
+        print(thread_subpage_url)
+
         # load webpage
         browser.get(thread_subpage_url)
         #if VERBOSE: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
@@ -378,6 +379,7 @@ parser = argparse.ArgumentParser(description='LIHKG scraper')
 parser.add_argument('--name', help='scrape prefix', default='lihkg')
 parser.add_argument('--start', help='first thread id', type=int, default=1)
 parser.add_argument('--stop', help='last thread id', type=int, default=10)
+parser.add_argument('--done_to', help='done to id', type=int, default=1)
 parser.add_argument('--threads', help='number of threads', type=int, default=1)
 parser.add_argument('--ignore_handled', help='skip handled threads', type=bool, default=True)
 parser.add_argument('--verbose', help='talk or not', type=bool, default=True)
@@ -396,6 +398,7 @@ if True:
     WORKERS = args.threads
     THREAD_FROM = args.start
     THREAD_TO = args.stop
+    THREAD_DONE_TO = args.done_to
     WEBDRIVER_TIMEOUT = args.webdriver_timeout
     SKIP_VISITED_THREADS = args.ignore_handled
     SHORT_WAIT_MIN = args.short_wait_min
@@ -443,7 +446,7 @@ if False:
 q = queue.Queue()
 
 # add thread ids to queue
-for url in range(THREAD_FROM,THREAD_TO):
+for url in range(max(THREAD_FROM,THREAD_DONE_TO),THREAD_TO+1):
     q.put(url)
 
 # poison pills to kill threads

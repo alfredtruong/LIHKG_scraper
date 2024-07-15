@@ -25,16 +25,24 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper
 ##########################################
 # run scraper
 ##########################################
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2850000 --stop 2950000 --machine g12
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2950000 --stop 3050000 --machine g13
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3050000 --stop 3150000 --machine g14
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3150000 --stop 3250000 --machine g15
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3250000 --stop 3350000 --machine g16
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3350000 --stop 3450000 --machine g17
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3450000 --stop 3550000 --machine gxx
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3550000 --stop 3650000 --machine gxx
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3650000 --stop 3750000 --machine gxx
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3750000 --stop 3850000 --machine gxx
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2250000 --stop 2350000 --machine g12 #
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2350000 --stop 2450000 --machine g13 #
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2450000 --stop 2550000 --machine g14 #
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2550000 --stop 2650000 --machine g15 # RUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2650000 --stop 2750000 --machine g16 # RUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2750000 --stop 2850000 --machine g17 # RUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2850000 --stop 2950000 --machine g12 --done_to 2949999 # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2950000 --stop 3050000 --machine g13 --done_to 3049974  # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3050000 --stop 3150000 --machine g14 --done_to 3123899  # RERUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3150000 --stop 3250000 --machine g15 --done_to 3249996  # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3250000 --stop 3350000 --machine g16 --done_to 3349997  # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3350000 --stop 3450000 --machine g17 --done_to 3449994  # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3450000 --stop 3550000 --machine g12 # RUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3550000 --stop 3650000 --machine g13 # RUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3650000 --stop 3750000 --machine g14 # RUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3750000 --stop 3850000 --machine g15 # no threads
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3850000 --stop 3950000 --machine g16 # no threads
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3950000 --stop 4050000 --machine g17 # no threads
 
 
 ##########################################
@@ -66,3 +74,9 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; bash Miniconda3-latest-Linux-x86_64.sh 
 ll ~/nfs/code/nlp/bin/
 # check selenium processes
 ps aux | grep alfred | grep selenium | awk '{print $2}' | wc -l
+
+
+##########################################
+# reset multiple server file rights
+##########################################
+# cd ~/nfs/code/LIHKG/; chmod -R 777 LIHKG_scraper/*
