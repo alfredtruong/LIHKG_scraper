@@ -31,12 +31,12 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2550000 --stop 2650000 --machine g15 # RUNNING
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2650000 --stop 2750000 --machine g16 # RUNNING
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2750000 --stop 2850000 --machine g17 # RUNNING
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2850000 --stop 2950000 --machine g12 --done_to 2949999 # done
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2950000 --stop 3050000 --machine g13 --done_to 3049974  # done
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3050000 --stop 3150000 --machine g14 --done_to 3123899  # RERUNNING
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3150000 --stop 3250000 --machine g15 --done_to 3249996  # done
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3250000 --stop 3350000 --machine g16 --done_to 3349997  # done
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3350000 --stop 3450000 --machine g17 --done_to 3449994  # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2850000 --stop 2950000 --machine g12 --ignore_handled False # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 2950000 --stop 3050000 --machine g13 --ignore_handled False # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3050000 --stop 3150000 --machine g14 --ignore_handled False # RERUNNING
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3150000 --stop 3250000 --machine g15 --ignore_handled False # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3250000 --stop 3350000 --machine g16 --ignore_handled False # done
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3350000 --stop 3450000 --machine g17 --ignore_handled False # done
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3450000 --stop 3550000 --machine g12 # RUNNING
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3550000 --stop 3650000 --machine g13 # RUNNING
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3650000 --stop 3750000 --machine g14 # RUNNING
@@ -44,6 +44,18 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3850000 --stop 3950000 --machine g16 # no threads
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3950000 --stop 4050000 --machine g17 # no threads
 
+##########################################
+# zip output files (zip and dont delete)
+##########################################
+gzip -k -9 lihkg_2850000_2950000.jsonl # done
+gzip -k -9 lihkg_2950000_3050000.jsonl # done
+gzip -k -9 lihkg_3050000_3150000.jsonl
+gzip -k -9 lihkg_3150000_3250000.jsonl # done
+gzip -k -9 lihkg_3250000_3350000.jsonl # done
+gzip -k -9 lihkg_3350000_3450000.jsonl # done
+gzip -k -9 lihkg_3450000_3550000.jsonl
+gzip -k -9 lihkg_3550000_3650000.jsonl
+gzip -k -9 lihkg_3650000_3750000.jsonl
 
 ##########################################
 # kill bad runs
