@@ -6,6 +6,7 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper
 # Set the default values for the parameters
 start=2850000
 stop=2900000
+ignore_handled=True
 machine_name="g12"
 
 # Parse the command-line arguments
@@ -38,7 +39,7 @@ done
 source ~/nfs/code/nlp/bin/activate
 
 # Run the Python script using nohup
-python3 scrape_threads_mt.py --start $start --stop $stop --threads 10 --ignore_handled True > scrape_threads_mt_${start}_${stop}_${machine_name}.out 2>&1 &
+python3 scrape_threads_mt.py --start $start --stop $stop --threads 10 --ignore_handled $ignore_handled > scrape_threads_mt_${start}_${stop}_${machine_name}.out 2>&1 &
 
 # Deactivate the virtual environment
 deactivate

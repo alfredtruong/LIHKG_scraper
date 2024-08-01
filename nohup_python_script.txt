@@ -43,6 +43,9 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 
 # ps aux | grep alfred | grep selenium | awk '{print $2}' | xargs kill -9
 # ps aux | grep alfred | grep scrape | awk '{print $2}' | xargs kill -9
 
+# ps aux | grep alfred | grep selenium | awk '{print $2}' | wc -l
+# ps aux | grep alfred | grep scrape | awk '{print $2}' | wc -l
+
 # ps aux | grep alfred
 # ps aux | grep alfred | grep scrape
 

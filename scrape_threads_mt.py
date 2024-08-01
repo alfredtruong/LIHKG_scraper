@@ -443,7 +443,8 @@ if False:
 q = queue.Queue()
 
 # add thread ids to queue
-for url in range(THREAD_FROM,THREAD_TO):
+MIN_HANDLED_THREAD = 147022
+for url in range(max(MIN_HANDLED_THREAD,THREAD_FROM),THREAD_TO):
     q.put(url)
 
 # poison pills to kill threads
@@ -483,7 +484,7 @@ parser.add_argument('--webdriver_timeout', help='max thread load time', type=int
 # (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ nohup python scrape_threads_mt.py --start 1 --stop 250000 --threads 5 --ignore_handled False > scrape_threads_mt_1_250000.out 2>&1 &
 # (nlp_env) alfred@net-g14:~/code/OpenRice/openrice_recommendator$ less scrape_threads_mt_1_250000.out 
 
-# nohup python scrape_threads_mt.py --start 1       --stop 250000  --threads 10 --ignore_handled True > scrape_threads_mt_1_250000.out 2>&1
+# nohup python scrape_threads_mt.py --start 1       --stop 250000  --threads 10 --ignore_handled False > scrape_threads_mt_1_250000.out 2>&1
 # nohup python scrape_threads_mt.py --start 250000  --stop 500001  --threads 10 --ignore_handled True > scrape_threads_mt_0250000_0500001.out 2>&1 &
 # nohup python scrape_threads_mt.py --start 500001  --stop 1000001 --threads 10 --ignore_handled True > scrape_threads_mt_0500001_1000001.out 2>&1 &
 # nohup python scrape_threads_mt.py --start 1000001 --stop 1500001 --threads 10 --ignore_handled True > scrape_threads_mt_1000001_1500001.out 2>&1 &
