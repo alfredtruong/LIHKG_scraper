@@ -192,7 +192,8 @@ def capture_thread_subpage(
     try:
         # generate url
         thread_subpage_url = thread_id_and_subpage_id_to_url(thread_id,subpage_id)
-        
+        print(thread_subpage_url)
+
         # load webpage
         browser.get(thread_subpage_url)
         #if VERBOSE: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
@@ -443,8 +444,7 @@ if False:
 q = queue.Queue()
 
 # add thread ids to queue
-MIN_HANDLED_THREAD = 147022
-for url in range(max(MIN_HANDLED_THREAD,THREAD_FROM),THREAD_TO):
+for url in range(THREAD_FROM,THREAD_TO+1):
     q.put(url)
 
 # poison pills to kill threads
