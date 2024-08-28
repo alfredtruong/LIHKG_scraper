@@ -21,10 +21,9 @@ old stuff
 - non-multithreaded version `scrape_threads.py`
 
 ## About
-- I build this making use of `https://github.com/papatekken/simple-LIHKG-scraper-with-python`
-- improvements made
+- built off `https://github.com/papatekken/simple-LIHKG-scraper-with-python` with the following improvements
     - batch runnable
-    - can be restarted without redownloading everything
+    - restartable
 
 ## License
 [MIT](https://github.com/alfredtruong/LIHKG_scraper)
