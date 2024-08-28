@@ -23,6 +23,8 @@ from fake_useragent import UserAgent
 #import chromedriver_autoinstaller
 #chromedriver_autoinstaller.install()
 
+from bs4 import BeautifulSoup
+
 lock = threading.Lock()
 
 ############### chromedriver
@@ -356,8 +358,6 @@ if True:
     THREAD_TO = 10
     WEBDRIVER_TIMEOUT = 10
     SKIP_VISITED_THREADS = False
-    SHORT_WAIT_MIN, SHORT_WAIT_MAX = 5, 10
-    LONG_WAIT_MIN, LONG_WAIT_MAX = 30, 60
 
 if True:
     USE_PROXY_IP = True
@@ -370,33 +370,16 @@ if False:
     ################################# START
     browser = get_browser_list(proxy_list)
     #browser = get_browser_df(proxy_df)
-    #%%
-
 
     #%%
     capture_thread(browser,1,SKIP_VISITED_THREADS)
     capture_thread(browser,2,SKIP_VISITED_THREADS)
     capture_thread(browser,3,SKIP_VISITED_THREADS)
-    #%%
     capture_thread(browser,4,SKIP_VISITED_THREADS)
     #capture_thread(browser,3716261,SKIP_VISITED_THREADS)
-
-    #capture_thread_subpage(browser,3716261,1)
-    #%%
-
-    if browser is not None:
-        browser.quit()
-
-    #%%
-
-    # capture_thread(1)
-    # close chromedriver
 
     #%%
     capture_thread_subpage(browser,4,1)
     capture_thread(browser,4)
 
     # %%
-
-
-

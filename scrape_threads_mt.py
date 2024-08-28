@@ -420,15 +420,12 @@ if False:
     ################################# START
     browser = get_browser(proxy_list)
 
+    #%%
     capture_thread(browser,1,SKIP_VISITED_THREADS)
     capture_thread(browser,2,SKIP_VISITED_THREADS)
     capture_thread(browser,3,SKIP_VISITED_THREADS)
     capture_thread(browser,4,SKIP_VISITED_THREADS)
     #capture_thread(browser,3716261,SKIP_VISITED_THREADS)
-
-    #capture_thread_subpage(browser,3716261,1)
-    #%%
-
 
     #%%
     capture_thread_subpage(browser,4,1)
