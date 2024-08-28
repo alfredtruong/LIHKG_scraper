@@ -7,3 +7,4 @@ authors:
 title: "LIHKG_scraper"
 date-released: 2024-08-28
 url: "https://github.com/alfredtruong/LIHKG_scraper"
+description: "A simple scraper to capture text from posts of the Hong Kong forum LIHKG."
