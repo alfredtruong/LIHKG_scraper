@@ -8,18 +8,16 @@ import os
 import random
 import threading
 
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 from fake_useragent import UserAgent
-
-from selenium import webdriver
 #from webdriver_manager.chrome import ChromeDriverManager
-
 #driver = webdriver.Chrome(ChromeDriverManager().install())
-
 
 #pip install chromedriver-autoinstaller
 #import chromedriver_autoinstaller
@@ -29,8 +27,6 @@ lock = threading.Lock()
 
 ############### chromedriver
 # init selenium
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 def get_browser_list(proxy_list):
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")
@@ -41,6 +37,7 @@ def get_browser_list(proxy_list):
     # user agent
     ua = UserAgent()
     chrome_options.add_argument(f"--user-agent={ua.random}")
+
     # proxy ip
     if USE_PROXY_IP:
         proxy_ip = random.choice(proxy_list)
@@ -55,8 +52,10 @@ def get_browser_df(proxy_df):
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-popup-blocking")
     chrome_options.add_argument("--log-level=1")
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
     #chrome_options.add_argument("--disable-dev-shm-usage")
     #chrome_options.add_argument("--no-sandbox")
+
     # user agent
     ua = UserAgent()
     chrome_options.add_argument(f"--user-agent={ua.random}")
@@ -64,7 +63,6 @@ def get_browser_df(proxy_df):
     # proxy ip
     if USE_PROXY_IP:
         proxy_ip = proxy_df.sample(1).values.flatten().tolist()
-        print(proxy_ip)
         chrome_options.add_argument(f"--proxy-server={proxy_ip[0]}:{proxy_ip[0]}")
 
     # build and return
@@ -199,8 +197,10 @@ def capture_thread_subpage(
     '''
     try:
         # generate url
+        print(f'[capture_thread_subpage] thread_id = {thread_id}, subpage_id = {subpage_id}')
         thread_subpage_url = thread_id_and_subpage_id_to_url(thread_id,subpage_id)
-        
+        print(thread_subpage_url)
+
         # load webpage
         browser.get(thread_subpage_url)
         #if VERBOSE: print(f'[capture_thread_subpage] {thread_id} {subpage_id}')
@@ -214,12 +214,63 @@ def capture_thread_subpage(
         thread_title_text = browser.find_element(By.CLASS_NAME,'CrheYfsiQFY-vLMnO378W').text
 
         # get comments
+        #comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'GAagiRXJU88Nul1M7Ai0H')
         #comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'_2cNsJna0_hV8tdMj3X6_gJ')
-        comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'GAagiRXJU88Nul1M7Ai0H')
-        comments_text = [x.text for x in comments]
+        #comments = browser.find_element(By.CLASS_NAME,'eslltWt3HgKnG_miBwvfx').find_elements(By.CLASS_NAME,'GAagiRXJU88Nul1M7Ai0H')
+        #[x.text for x in comments]
 
+        #parent_elements = browser.find_elements(By.CSS_SELECTOR, "div._2cNsJna0_hV8tdMj3X6_gJ")
+
+        # Get the page source after it's fully loaded
+        page_source = browser.page_source
+
+        # Parse the page source with BeautifulSoup
+        soup = BeautifulSoup(page_source, "html.parser")
+
+        # Find all the parent elements
+        parent_elements = soup.find_all("div", class_="_2cNsJna0_hV8tdMj3X6_gJ", attrs={"data-ast-root": "true"})
+
+        # Extract the text from each parent element
+        for parent_element in parent_elements:
+            # Remove the blockquote elements from the parent element
+            for blockquote_element in parent_element.find_all("blockquote", class_="_31B9lsqlMMdzv-FSYUkXeV"):
+                blockquote_element.decompose()
+
+        # Get the text of the modified parent element
+        res = [parent_element.get_text(strip=True) for parent_element in parent_elements]
+
+        '''
+        # Find the parent element
+        parent_element = browser.find_element(By.CSS_SELECTOR, "div.GAagiRXJU88Nul1M7Ai0H")
+        # for i,x in enumerate(parent_elements): print(i,x.text)
+
+
+        # Get all the child elements of the parent element, excluding the blockquote elements
+        child_elements = [elem for elem in parent_element.find_elements(By.CSS_SELECTOR, "*") if elem.tag_name != "blockquote"]
+        [x.text for x in child_elements]
+
+        all_elements = browser.find_elements(By.CSS_SELECTOR, "div.GAagiRXJU88Nul1M7Ai0H")
+        #all_elements = browser.find_elements(By.CSS_SELECTOR, "div._2cNsJna0_hV8tdMj3X6_gJ > *")
+        [x.text for x in all_elements]
+        remaining_elements = [elem for elem in all_elements if elem.get_attribute("class") != "_31B9lsqlMMdzv-FSYUkXeV"]
+        #[x.text for x in remaining_elements]
+        comments_text = [x.text for x in remaining_elements]
+
+
+        # Loop through the parent elements and remove the blockquote sub-blocks
+        for parent_elem in all_elements:
+            blockquotes = parent_elem.find_elements(By.CSS_SELECTOR, "blockquote._31B9lsqlMMdzv-FSYUkXeV")
+            for blockquote in blockquotes:
+                browser.execute_script("arguments[0].remove();", blockquote)
+
+        # Now you can interact with the modified elements
+        for parent_elem in all_elements:
+            # Perform actions on the modified elements
+            print(parent_elem.text)
+
+        '''
         # write to file
-        write_comments_to_jsonl(thread_subpage_url,thread_topic_text,thread_title_text,comments_text)
+        write_comments_to_jsonl(thread_subpage_url,thread_topic_text,thread_title_text,res)
         return True # success
     except TimeoutException:
         return False # failure
@@ -242,9 +293,9 @@ def capture_thread(
     thread_id=3
     '''
     ################### ref data
+    print(f'[capture_thread] thread_id = {thread_id}, skip_partial_thread_successes = {skip_partial_thread_successes}')
     thread_url = thread_id_to_url(thread_id) # thread_url
     handled_threads = read_json(THREAD_STATUS_JSON) # load previously handled threads
-    print('start')
 
     ################### should revisit previously handled threads?
     if skip_partial_thread_successes:
@@ -257,10 +308,8 @@ def capture_thread(
     try:
         # load main page
         browser.get(thread_url)
-        print('got')
         element_present = EC.presence_of_element_located((By.CLASS_NAME, '_36ZEkSvpdj_igmog0nluzh'))
         WebDriverWait(browser, WEBDRIVER_TIMEOUT).until(element_present)
-        print('waited')
 
         # identify count of subpages
         content = browser.find_element(By.CLASS_NAME,'_1H7LRkyaZfWThykmNIYwpH') # get page container
@@ -268,11 +317,8 @@ def capture_thread(
         total_subpages = len(options)
 
         # identify subpages to ignore (there maybe new subpages / new comments)
-        #print(handled_threads)
         thread_details = handled_threads.get(thread_url,{})
-        #print(thread_details)
         handled_subpage_ids = thread_details.get('handled_subpage_ids',[])
-        #print(handled_subpage_ids)
         if VERBOSE: print(f'[capture_thread][{thread_url}] handled_subpage_ids = {handled_subpage_ids}')
 
         # capture unhandled pages
@@ -284,7 +330,7 @@ def capture_thread(
             else:
                 # handle
                 if VERBOSE: print('x',end='') # same line
-                capture_res = capture_thread_subpage(browser, thread_id,subpage_id)
+                capture_res = capture_thread_subpage(browser, thread_id, subpage_id)
                 if capture_res:
                     newly_handled_subpage_ids.append(subpage_id)
         if VERBOSE: print() # new line
@@ -302,50 +348,55 @@ def capture_thread(
 # ref
 from scrape_params import proxy_list,proxy_df
 
-VERBOSE = True
-USE_PROXY_IP = True
-WORKERS = 50
-THREAD_FROM = 1
-THREAD_TO = 10
-OUTPUT_FILE_PREFIX = f'lihkg_{THREAD_FROM}_{THREAD_TO}'
-THREAD_STATUS_JSON = f'assets/scrapes/{OUTPUT_FILE_PREFIX}_status.json'
-THREAD_COMMENTS_JSONL = f'assets/scrapes/{OUTPUT_FILE_PREFIX}.jsonl'
-WEBDRIVER_TIMEOUT = 10
-SKIP_VISITED_THREADS = False
-SHORT_WAIT_MIN, SHORT_WAIT_MAX = 5, 10
-LONG_WAIT_MIN, LONG_WAIT_MAX = 60, 120
+# settings
+if True:
+    VERBOSE = True
+    WORKERS = 5
+    THREAD_FROM = 1
+    THREAD_TO = 10
+    WEBDRIVER_TIMEOUT = 10
+    SKIP_VISITED_THREADS = False
+    SHORT_WAIT_MIN, SHORT_WAIT_MAX = 5, 10
+    LONG_WAIT_MIN, LONG_WAIT_MAX = 30, 60
 
-#%%
-################################# START
-browser = get_browser_list(proxy_list)
-#browser = get_browser_df(proxy_df)
-#%%
+if True:
+    USE_PROXY_IP = True
+    OUTPUT_FILE_PREFIX = f'lihkg_{THREAD_FROM}_{THREAD_TO}'
+    THREAD_STATUS_JSON = f'assets/scrapes/{OUTPUT_FILE_PREFIX}_status.json'
+    THREAD_COMMENTS_JSONL = f'assets/scrapes/{OUTPUT_FILE_PREFIX}.jsonl'
+
+if False:
+    #%%
+    ################################# START
+    browser = get_browser_list(proxy_list)
+    #browser = get_browser_df(proxy_df)
+    #%%
 
 
-#%%
-capture_thread(browser,1,SKIP_VISITED_THREADS)
-capture_thread(browser,2,SKIP_VISITED_THREADS)
-capture_thread(browser,3,SKIP_VISITED_THREADS)
-#%%
-capture_thread(browser,4,SKIP_VISITED_THREADS)
-#capture_thread(browser,3716261,SKIP_VISITED_THREADS)
+    #%%
+    capture_thread(browser,1,SKIP_VISITED_THREADS)
+    capture_thread(browser,2,SKIP_VISITED_THREADS)
+    capture_thread(browser,3,SKIP_VISITED_THREADS)
+    #%%
+    capture_thread(browser,4,SKIP_VISITED_THREADS)
+    #capture_thread(browser,3716261,SKIP_VISITED_THREADS)
 
-#capture_thread_subpage(browser,3716261,1)
-#%%
+    #capture_thread_subpage(browser,3716261,1)
+    #%%
 
-if browser is not None:
-    browser.quit()
+    if browser is not None:
+        browser.quit()
 
-#%%
+    #%%
 
-# capture_thread(1)
-# close chromedriver
+    # capture_thread(1)
+    # close chromedriver
 
-#%%
-capture_thread_subpage(browser,4,1)
-capture_thread(browser,4)
+    #%%
+    capture_thread_subpage(browser,4,1)
+    capture_thread(browser,4)
 
-# %%
+    # %%
 
 
 

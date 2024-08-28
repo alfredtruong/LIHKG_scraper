@@ -30,6 +30,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 from fake_useragent import UserAgent
+#from webdriver_manager.chrome import ChromeDriverManager
+#driver = webdriver.Chrome(ChromeDriverManager().install())
 
 #pip install chromedriver-autoinstaller
 #import chromedriver_autoinstaller
@@ -60,11 +62,8 @@ def get_browser(proxy_list):
         }
     }
 
-    driver = webdriver.Chrome(
-        options=chrome_options,
-        seleniumwire_options=sw_options,
-    )
-
+    # build and return
+    driver = webdriver.Chrome(options=chrome_options,seleniumwire_options=sw_options)
     return driver
 '''
 
@@ -191,6 +190,7 @@ def capture_thread_subpage(
     '''
     try:
         # generate url
+        print(f'[capture_thread_subpage] thread_id = {thread_id}, subpage_id = {subpage_id}')
         thread_subpage_url = thread_id_and_subpage_id_to_url(thread_id,subpage_id)
         print(thread_subpage_url)
 
@@ -286,9 +286,9 @@ def capture_thread(
     thread_id=3
     '''
     ################### ref data
+    print(f'[capture_thread] thread_id = {thread_id}, skip_partial_thread_successes = {skip_partial_thread_successes}')
     thread_url = thread_id_to_url(thread_id) # thread_url
     handled_threads = read_json(THREAD_STATUS_JSON) # load previously handled threads
-    #print('start')
 
     ################### should revisit previously handled threads?
     if skip_partial_thread_successes:
@@ -311,10 +311,8 @@ def capture_thread(
     try:
         # load main page
         browser.get(thread_url)
-        #print('got')
         element_present = EC.presence_of_element_located((By.CLASS_NAME, '_36ZEkSvpdj_igmog0nluzh'))
         WebDriverWait(browser, WEBDRIVER_TIMEOUT).until(element_present)
-        #print('waited')
 
         # identify count of subpages
         content = browser.find_element(By.CLASS_NAME,'_1H7LRkyaZfWThykmNIYwpH') # get page container
@@ -322,11 +320,8 @@ def capture_thread(
         total_subpages = len(options)
 
         # identify subpages to ignore (there maybe new subpages / new comments)
-        #print(handled_threads)
         thread_details = handled_threads.get(thread_url,{})
-        #print(thread_details)
         handled_subpage_ids = thread_details.get('handled_subpage_ids',[])
-        #print(handled_subpage_ids)
         if VERBOSE: print(f'[capture_thread][{thread_url}] handled_subpage_ids = {handled_subpage_ids}')
 
         # capture unhandled pages
@@ -338,7 +333,7 @@ def capture_thread(
             else:
                 # handle
                 if VERBOSE: print('x',end='') # same line
-                capture_res = capture_thread_subpage(browser, thread_id,subpage_id)
+                capture_res = capture_thread_subpage(browser, thread_id, subpage_id)
                 if capture_res:
                     newly_handled_subpage_ids.append(subpage_id)
         if VERBOSE: print() # new line
@@ -364,7 +359,7 @@ def worker(q: queue, proxy_list) -> None:
         if thread_id is None:  # if poison pill, exit thread
             break
 
-        capture_thread(browser,thread_id,SKIP_VISITED_THREADS)
+        capture_thread(browser, thread_id, SKIP_VISITED_THREADS)
 
     print('done')
     if browser is not None:
@@ -398,7 +393,7 @@ if True:
     THREAD_FROM = args.start
     THREAD_TO = args.stop
     WEBDRIVER_TIMEOUT = args.webdriver_timeout
-    SKIP_VISITED_THREADS = args.ignore_handled
+    #SKIP_VISITED_THREADS = args.ignore_handled
     SHORT_WAIT_MIN = args.short_wait_min
     SHORT_WAIT_MAX = args.short_wait_max
     LONG_WAIT_MIN = args.long_wait_min
@@ -407,7 +402,7 @@ else:
     VERBOSE = True
     WORKERS = 5
     THREAD_FROM = 1
-    THREAD_TO = 100
+    THREAD_TO = 10
     WEBDRIVER_TIMEOUT = 10
     SKIP_VISITED_THREADS = False
     SHORT_WAIT_MIN, SHORT_WAIT_MAX = 5, 10
@@ -418,6 +413,7 @@ if True:
     OUTPUT_FILE_PREFIX = f'lihkg_{THREAD_FROM}_{THREAD_TO}'
     THREAD_STATUS_JSON = f'assets/scrapes/{OUTPUT_FILE_PREFIX}_status.json'
     THREAD_COMMENTS_JSONL = f'assets/scrapes/{OUTPUT_FILE_PREFIX}.jsonl'
+    SKIP_VISITED_THREADS = False
 
 if False:
     #%%
