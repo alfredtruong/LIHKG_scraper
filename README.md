@@ -1,34 +1,21 @@
 # simple LIHKG scraper with python
+- single (and multithreaded) scraper for LIHKG
+- uses `chromedriver` to load thread (subpages)
+- uses `BeautifulSoup` to extract relevant items
 
+## Usage
+capture a single thread
+```python
+from scrape_params import proxy_list # load params
+browser = get_browser_list(proxy_list) # init chromedriver
+capture_thread(browser,1) # capture all subpages of a particular thread
+```
 
 ## About
-
-A simple scraper to capture text from Hong Kong forum LIHKG posts, which is a good starting point for who interested in web scraping,
-It was developed in Python, by using the library [Selenium]
-
-
-
-
-## Installation
-
-1. Setup [Python](https://www.python.org/) and [GIT](https://git-scm.com/) in runtime environment
-
-2. Install library [selenium] (https://pypi.org/project/selenium/)
-
-3. Clone the repository 
-    ```
-    git clone https://github.com/papatekken/simple-LIHKG-scraper-with-python LIHKG-scraper
-    ```
-
-4. In root directory of 'LIHKG-scraper', run following command to start the application, when the application finished the run, a new text file is created with capture data .
-
-    the program is expecting the post ID as argument
-
-    e.g. post ID = 1996060 
-
-    ```
-    python hkg.py 1996060
-    ```
+- I build this making use of `https://github.com/papatekken/simple-LIHKG-scraper-with-python`
+- improvements made
+    - batch runnable
+    - can be restarted without redownloading everything
 
 ## License
-[MIT](https://github.com/papatekken/simple-LIHKG-scraper-with-python/blob/master/LICENSE)
+[MIT](https://github.com/alfredtruong/LIHKG_scraper)
