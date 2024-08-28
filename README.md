@@ -11,6 +11,15 @@ browser = get_browser_list(proxy_list) # init chromedriver
 capture_thread(browser,1) # capture all subpages of a particular thread
 ```
 
+capture a range of threads with multithreading (look at `nohup_python_script.*` files)
+```bash
+python3 scrape_threads_mt.py --start 1 --stop 100 --threads 10 --ignore_handled True
+```
+
+old stuff
+- code from the forked repo `hkg.py`
+- non-multithreaded version `scrape_threads.py`
+
 ## About
 - I build this making use of `https://github.com/papatekken/simple-LIHKG-scraper-with-python`
 - improvements made

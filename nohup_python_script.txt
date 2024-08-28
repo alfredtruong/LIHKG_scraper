@@ -1,15 +1,19 @@
 ##########################################
+# install miniconda
+##########################################
+# install python
+cd /nfs/alfred/code/LIHKG/LIHKG_scraper
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh -b
+
+##########################################
 # build environment
 ##########################################
-(base) alfred@net-g14:~/nfs/code$ conda activate  nlp_env
-(nlp_env) alfred@net-g14:~/nfs/code$ pip list --format=freeze > requirements.txt
-(base) alfred@net-g14:~/nfs/code$ python3 -m pip install virtualenv
-(base) alfred@net-g14:~/nfs/code$ python3 -m venv nlp
-(base) alfred@net-g14:~/nfs/code$ source nlp/bin/activate
-(base) alfred@net-g14:~/nfs/code$ 
-source ~/nfs/code/nlp/bin/activate
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper
-pip install -r requirements.txt
+conda activate  nlp_env
+pip list --format=freeze > requirements.txt
+python3 -m pip install virtualenv
+python3 -m venv nlp
+source nlp/bin/activate
 
 python3 -m pip install selenium
 python3 -m pip install bs4
@@ -45,17 +49,20 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3950000 --stop 4050000 --machine g17
 
 ##########################################
-# zip output files (zip and keep raw file)
+# zip jsonl files (zip and keep raw file)
 ##########################################
+gzip -k -9 lihkg_2550000_2650000.jsonl # done
+gzip -k -9 lihkg_2650000_2750000.jsonl # done
+gzip -k -9 lihkg_2750000_2850000.jsonl # done
 gzip -k -9 lihkg_2850000_2950000.jsonl # done
 gzip -k -9 lihkg_2950000_3050000.jsonl # done
-gzip -k -9 lihkg_3050000_3150000.jsonl
+gzip -k -9 lihkg_3050000_3150000.jsonl # done
 gzip -k -9 lihkg_3150000_3250000.jsonl # done
 gzip -k -9 lihkg_3250000_3350000.jsonl # done
 gzip -k -9 lihkg_3350000_3450000.jsonl # done
-gzip -k -9 lihkg_3450000_3550000.jsonl
-gzip -k -9 lihkg_3550000_3650000.jsonl
-gzip -k -9 lihkg_3650000_3750000.jsonl
+gzip -k -9 lihkg_3450000_3550000.jsonl # done
+gzip -k -9 lihkg_3550000_3650000.jsonl # done
+gzip -k -9 lihkg_3650000_3750000.jsonl # done
 
 ##########################################
 # kill bad runs
@@ -69,28 +76,8 @@ gzip -k -9 lihkg_3650000_3750000.jsonl
 # ps aux | grep alfred
 # ps aux | grep alfred | grep scrape
 
-
 ##########################################
 # fix rights
 ##########################################
-# chmod 777 nohup_python_script.*
-
-##########################################
-# install miniconda
-##########################################
-# alfred@net-g13:/nfs/alfred/code/LIHKG/LIHKG_scraper$ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-# alfred@net-g13:/nfs/alfred/code/LIHKG/LIHKG_scraper$ bash Miniconda3-latest-Linux-x86_64.sh
-
-# check if python installed
-ll ~/nfs/code/nlp/bin/
-# install python
-cd /nfs/alfred/code/LIHKG/LIHKG_scraper; bash Miniconda3-latest-Linux-x86_64.sh -b
-# check if python installed
-ll ~/nfs/code/nlp/bin/
-# check selenium processes
-ps aux | grep alfred | grep selenium | awk '{print $2}' | wc -l
-
-##########################################
-# reset multiple server file rights
-##########################################
-# cd ~/nfs/code/LIHKG/; chmod -R 777 LIHKG_scraper/*
+cd ~/nfs/code/LIHKG/; chmod 777 nohup_python_script.* # this file
+cd ~/nfs/code/LIHKG/; chmod -R 777 LIHKG_scraper/* # reset multiple server file rights
