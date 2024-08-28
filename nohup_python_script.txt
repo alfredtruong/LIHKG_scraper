@@ -45,7 +45,7 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 
 cd /nfs/alfred/code/LIHKG/LIHKG_scraper; nohup ./nohup_python_script.sh --start 3950000 --stop 4050000 --machine g17
 
 ##########################################
-# zip output files (zip and dont delete)
+# zip output files (zip and keep raw file)
 ##########################################
 gzip -k -9 lihkg_2850000_2950000.jsonl # done
 gzip -k -9 lihkg_2950000_3050000.jsonl # done
@@ -89,7 +89,6 @@ cd /nfs/alfred/code/LIHKG/LIHKG_scraper; bash Miniconda3-latest-Linux-x86_64.sh 
 ll ~/nfs/code/nlp/bin/
 # check selenium processes
 ps aux | grep alfred | grep selenium | awk '{print $2}' | wc -l
-
 
 ##########################################
 # reset multiple server file rights
